@@ -9,30 +9,30 @@
             font-family: Arial, sans-serif;
             background-color: #f4f7f6;
             margin: 0;
-            padding: 10px;
+            padding: 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         h1 {
             color: #333;
-            margin-bottom: 5px;
-            font-size: 20px;
+            margin-bottom: 3px;
+            font-size: 18px;
             text-align: center;
         }
         p {
             color: #666;
-            margin-bottom: 15px;
-            font-size: 12px;
+            margin-bottom: 10px;
+            font-size: 11px;
             text-align: center;
         }
         #grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(6, 1fr); /* Fixen 6 oszlop mindenhol */
+            gap: 6px;
             max-width: 1200px;
             background: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             box-sizing: border-box;
@@ -41,8 +41,8 @@
         .seat {
             background: #ffffff;
             border: 2px dashed #3498db;
-            border-radius: 8px;
-            padding: 6px;
+            border-radius: 6px;
+            padding: 4px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -50,18 +50,18 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-height: 80px;
+            min-height: 65px;
         }
         .seat img {
-            width: 38px;
-            height: 38px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             object-fit: cover;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             border: 1px solid #ccc;
         }
         .seat span {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
             color: #2c3e50;
             word-break: break-word;
@@ -69,29 +69,6 @@
         .seat.drag-over {
             background: #ebf5fb;
             border-color: #2980b9;
-        }
-        @media (max-width: 1000px) {
-            #grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        @media (max-width: 600px) {
-            #grid {
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 5px;
-                padding: 8px;
-            }
-            .seat {
-                min-height: 70px;
-                padding: 3px;
-            }
-            .seat img {
-                width: 30px;
-                height: 30px;
-            }
-            .seat span {
-                font-size: 8.5px;
-            }
         }
     </style>
 </head>
