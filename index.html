@@ -98,41 +98,24 @@
 <body>
 
     <h1>Iskolai Üléssorrend Képekkel</h1>
-    <p>Húzd át egerrel vagy kattints két személyre a helycseréhez (online szinkronnal)!</p>
+    <p>Húzd át egerrel vagy kattints két személyre a helycseréhez!</p>
 
     <div id="grid"></div>
 
     <script>
-        // IDE ILLESD BE A SAJÁT NPOINT.IO URL CÍMEDET:
-        const API_URL = 'https://api.npoint.io/42ecce76285021549cf5';
+        const defaultNames = [
+            "Ács Mária", "Bánkuti Ferenc", "Bencsik Eleonóra", "Bucsi Ágnes", "Christoph Andrea", "Devecseri Julianna",
+            "Erős Katalin", "Éliás Mihály", "Fábián Lulianna", "Fazekas Erzsébet", "Gyökeres Gábor", "Herczegh Ágnes",
+            "Horák Ágota", "Horváth Franciska", "Kanyó Ilona", "Kátai Irén", "Kiss Teréz", "Kitzinger Gyula",
+            "Kovács Mária", "Lengyel Mária", "Luttemberger Vera", "Magaszitz Magdolna", "Mák Zsuzsanna", "Mészáros Éva",
+            "Molnár Mária", "Nagy Katalin", "Németh Judit", "Pere Hedvig", "Ray Mária", "Riemer Veronika",
+            "Romasowsky Etelka", "Solti János", "Skock Éva", "Tóth Irén", "Széchenyi Ildikó", "Szijártó Erzsébet",
+            "Szijártó Ferenc", "Szijártó Péter", "Szomorjai Ferenc", "Varga Mária", "", ""
+        ];
 
-        let students = [];
+        let students = JSON.parse(localStorage.getItem('ulesrend_names_img_42')) || [...defaultNames];
         let draggedIndex = null;
         let selectedIndex = null;
-
-        async function loadData() {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) {
-                    students = await response.json();
-                    renderGrid();
-                }
-            } catch (error) {
-                console.error("Hiba az adatok betöltésekor:", error);
-            }
-        }
-
-        async function saveData() {
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(students)
-                });
-            } catch (error) {
-                console.error("Hiba az adatok mentésekor:", error);
-            }
-        }
 
         function renderGrid() {
             const grid = document.getElementById('grid');
@@ -190,7 +173,7 @@
             this.classList.remove('drag-over');
         }
 
-        async function handleDrop(e) {
+        function handleDrop(e) {
             e.preventDefault();
             this.classList.remove('drag-over');
             const targetIndex = parseInt(this.dataset.index);
@@ -200,7 +183,7 @@
                 students[draggedIndex] = students[targetIndex];
                 students[targetIndex] = temp;
 
-                await saveData();
+                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
                 renderGrid();
             }
         }
@@ -210,7 +193,7 @@
             document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
         }
 
-        async function handleSeatClick(index) {
+        function handleSeatClick(index) {
             if (selectedIndex === null) {
                 selectedIndex = index;
                 renderGrid();
@@ -219,15 +202,13 @@
                 students[selectedIndex] = students[index];
                 students[index] = temp;
 
-                await saveData();
+                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
                 selectedIndex = null;
                 renderGrid();
             }
         }
 
-        // Adatok betöltése induláskor, majd 5 másodpercenkénti frissítés a szinkronhoz
-        loadData();
-        setInterval(loadData, 5000);
+        renderGrid();
     </script>
 </body>
 </html>
