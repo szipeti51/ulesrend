@@ -9,7 +9,7 @@
             font-family: Arial, sans-serif;
             background-color: #f4f7f6;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,26 +17,32 @@
         h1 {
             color: #333;
             margin-bottom: 5px;
+            font-size: 22px;
+            text-align: center;
         }
         p {
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            text-align: center;
         }
         #grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 15px;
+            gap: 12px;
             max-width: 1200px;
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            width: 100%;
         }
         .seat {
             background: #ffffff;
             border: 2px dashed #3498db;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -44,18 +50,18 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-height: 90px;
+            min-height: 85px;
         }
         .seat img {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             object-fit: cover;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             border: 1px solid #ccc;
         }
         .seat span {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #2c3e50;
             word-break: break-word;
@@ -72,15 +78,19 @@
         @media (max-width: 600px) {
             #grid {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
+                gap: 6px;
                 padding: 10px;
             }
             .seat {
                 min-height: 75px;
-                padding: 5px;
+                padding: 4px;
+            }
+            .seat img {
+                width: 32px;
+                height: 32px;
             }
             .seat span {
-                font-size: 10px;
+                font-size: 9px;
             }
         }
     </style>
@@ -105,7 +115,7 @@
 
         let students = JSON.parse(localStorage.getItem('ulesrend_names_img_42')) || [...defaultNames];
         let draggedIndex = null;
-        let selectedIndex = null; // Változó a mobilos/kattintásos cseréhez
+        let selectedIndex = null;
 
         function renderGrid() {
             const grid = document.getElementById('grid');
@@ -117,7 +127,6 @@
                 seat.draggable = true;
                 seat.dataset.index = index;
 
-                // Kijelölés vizuális jelzése kattintás esetén
                 if (selectedIndex === index) {
                     seat.style.border = '2px solid red';
                     seat.style.backgroundColor = '#fadbd8';
@@ -138,14 +147,12 @@
                 seat.appendChild(img);
                 seat.appendChild(span);
 
-                // Asztali egér húzás (Drag & Drop) események
                 seat.addEventListener('dragstart', handleDragStart);
                 seat.addEventListener('dragover', handleDragOver);
                 seat.addEventListener('dragleave', handleDragLeave);
                 seat.addEventListener('drop', handleDrop);
                 seat.addEventListener('dragend', handleDragEnd);
 
-                // Mobil / Kattintásos (Érintéses) csere esemény
                 seat.addEventListener('click', () => handleSeatClick(index));
 
                 grid.appendChild(seat);
@@ -189,11 +196,9 @@
 
         function handleSeatClick(index) {
             if (selectedIndex === null) {
-                // Első kattintás: kijelöljük az első embert
                 selectedIndex = index;
                 renderGrid();
             } else {
-                // Második kattintás: helycsere a két kiválasztott között
                 const temp = students[selectedIndex];
                 students[selectedIndex] = students[index];
                 students[index] = temp;
