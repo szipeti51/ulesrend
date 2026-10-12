@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Osztály Üléssorrend Képekkel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .info {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .grid-container {
+            display: grid;
+            /* 6 oszlop (3 pár pad), 7 sor -> 42 hely */
+            grid-template-columns: repeat(6, 140px);
+            grid-template-rows: repeat(7, 85px); /* Kicsit magasabb a hely a kép miatt */
+            gap: 8px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .seat {
+            background-color: #e3f2fd;
+            border: 2px dashed #90caf9;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column; /* Egymás alá rendezzük a képet és a nevet */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: grab;
+            user-select: none;
+            transition: background-color 0.2s, border-color 0.2s;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        .seat img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Kör alakú profilkép */
+            object-fit: cover;
+            margin-bottom: 3px;
+            border: 1px solid #90caf9;
+        }
+        .seat span {
+            font-weight: bold;
+            color: #0d47a1;
+            font-size: 11px;
+            line-height: 1.1;
+        }
+        /* Vizuális elválasztás a padpárok között */
+        .seat:nth-child(6n + 2) {
+            margin-right: 25px; 
+        }
+        .seat:nth-child(6n + 4) {
+            margin-right: 25px; 
+        }
+
+        .seat:active {
+            cursor: grabbing;
+        }
+        .seat.dragging {
+            opacity: 0.4;
+        }
+        .seat.drag-over {
+            background-color: #bbdefb;
+            border-color: #1976d2;
+            border-style: solid;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #115293;
+        }
+        /* Modal / Névsor szerkesztő */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            resize: vertical;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Iskolai Üléssorrend Képekkel</h1>
+    <div class="info">Húzd át az egerrel a helyeket a helycseréhez!</div>
+
+    <div class="grid-container" id="grid"></div>
+
+    <div class="controls">
+        <button onclick="openModal()">Névsor szerkesztése</button>
+        <button onclick="resetDefault()">Alaphelyzet</button>
+    </div>
+
+    <!-- Szerkesztő ablak -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3>Nevek szerkesztése (legfeljebb 42 név, soronként egy)</h3>
+            <textarea id="namesInput"></textarea>
+            <button onclick="saveNames()">Mentés és alkalmazás</button>
+            <button style="background-color: #757575;" onclick="closeModal()">Mégse</button>
+        </div>
+    </div>
+
+    <script>
+        let defaultNames = [
+            "Ács Mária","Bánkuti Ferenc","Bencsik Eleonóra","Bucsi Ágnes","Christoph Andrea","Devecseri Julianna",
+"Erős Katalin","Éliás Mihály","Fábián Lulianna","Fazekas Erzsébet","Gyökeres Gábor","Herczeg Ágnes","Horák Ágota",
+"Horváth Franciska","Kanyó Ilona","Kátai Irén","Kiss Teréz","Kitzinger Gyula","Kovács Mária","Lengyel Mária",
+"Luttemberger Vera","Magasitz Magdolna","Mák Zsuzsanna","Mézsáros Éva","Molnár Mária","Nagy Katalin","Németh Judit",
+"Pere Hedvig","Ray Mária","Riemer Veronika","Romasowsky Etelka","Solti János","Skock Éva","Tőth Irén","Széchenyi Ildikó",
+"Szijártó Erzsébet","Szijjártó Ferenc","Szijártó Péter","Szomorjai Ferenc","Varga Mária", "Üres 41", "Üres 42"
+        ];
+
+        let students = JSON.parse(localStorage.getItem('ulesrend_names_img_42')) || [...defaultNames];
+        let draggedIndex = null;
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            students.forEach((name, index) => {
+                const seat = document.createElement('div');
+                seat.className = 'seat';
+                seat.draggable = true;
+                seat.dataset.index = index;
+
+                // Ha van kép a nevével a kepek mappában, betölti, ha nincs, egy alap avatar ikont tesz be
+                const imgName = name.trim();
+                const imgPath = `${imgName}.jpg`;
+
+                const img = document.createElement('img');
+                img.src = imgPath;
+                // Ha hiba van (nincs ilyen kép), betölt egy helyettesítő ikont
+                img.onerror = function() {
+                    this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="%2390caf9"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                };
+
+                const span = document.createElement('span');
+                span.innerText = name || `Üres ${index + 1}`;
+
+                seat.appendChild(img);
+                seat.appendChild(span);
+
+                // Drag események
+                seat.addEventListener('dragstart', handleDragStart);
+                seat.addEventListener('dragover', handleDragOver);
+                seat.addEventListener('dragleave', handleDragLeave);
+                seat.addEventListener('drop', handleDrop);
+                seat.addEventListener('dragend', handleDragEnd);
+
+                grid.appendChild(seat);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            const targetIndex = parseInt(this.dataset.index);
+
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                let temp = students[draggedIndex];
+                students[draggedIndex] = students[targetIndex];
+                students[targetIndex] = temp;
+
+                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
+                renderGrid();
+            }
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
+        }
+
+        function openModal() {
+            document.getElementById('namesInput').value = students.join('\n');
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function saveNames() {
+            const text = document.getElementById('namesInput').value;
+            let lines = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+            
+            while(lines.length < 42) {
+                lines.push(`Üres ${lines.length + 1}`);
+            }
+            students = lines.slice(0, 42);
+
+            localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
+            renderGrid();
+            closeModal();
+        }
+
+        function resetDefault() {
+            if(confirm("Biztosan visszaállítod az alapértelmezett névsort?")) {
+                students = [...defaultNames];
+                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
+                renderGrid();
+            }
+        }
+
+        renderGrid();
+    </script>
+
+</body>
+</html>
