@@ -17,19 +17,19 @@
         h1 {
             color: #333;
             margin-bottom: 5px;
-            font-size: 22px;
+            font-size: 20px;
             text-align: center;
         }
         p {
             color: #666;
             margin-bottom: 15px;
-            font-size: 13px;
+            font-size: 12px;
             text-align: center;
         }
         #grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 12px;
+            gap: 10px;
             max-width: 1200px;
             background: white;
             padding: 15px;
@@ -42,7 +42,7 @@
             background: #ffffff;
             border: 2px dashed #3498db;
             border-radius: 8px;
-            padding: 8px;
+            padding: 6px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -50,18 +50,18 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-height: 85px;
+            min-height: 80px;
         }
         .seat img {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             object-fit: cover;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             border: 1px solid #ccc;
         }
         .seat span {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #2c3e50;
             word-break: break-word;
@@ -77,20 +77,20 @@
         }
         @media (max-width: 600px) {
             #grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 6px;
-                padding: 10px;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 5px;
+                padding: 8px;
             }
             .seat {
-                min-height: 75px;
-                padding: 4px;
+                min-height: 70px;
+                padding: 3px;
             }
             .seat img {
-                width: 32px;
-                height: 32px;
+                width: 30px;
+                height: 30px;
             }
             .seat span {
-                font-size: 9px;
+                font-size: 8.5px;
             }
         }
     </style>
@@ -98,24 +98,41 @@
 <body>
 
     <h1>Iskolai Üléssorrend Képekkel</h1>
-    <p>Húzd át egerrel vagy kattints két személyre a helycseréhez!</p>
+    <p>Húzd át egerrel vagy kattints két személyre a helycseréhez (online szinkronnal)!</p>
 
     <div id="grid"></div>
 
     <script>
-        const defaultNames = [
-            "Ács Mária", "Bánkuti Ferenc", "Bencsik Eleonóra", "Bucsi Ágnes", "Christoph Andrea", "Devecseri Julianna",
-            "Erős Katalin", "Éliás Mihály", "Fábián Lulianna", "Fazekas Erzsébet", "Gyökeres Gábor", "Herczegh Ágnes",
-            "Horák Ágota", "Horváth Franciska", "Kanyó Ilona", "Kátai Irén", "Kiss Teréz", "Kitzinger Gyula",
-            "Kovács Mária", "Lengyel Mária", "Luttemberger Vera", "Magaszitz Magdolna", "Mák Zsuzsanna", "Mészáros Éva",
-            "Molnár Mária", "Nagy Katalin", "Németh Judit", "Pere Hedvig", "Ray Mária", "Riemer Veronika",
-            "Romasowsky Etelka", "Solti János", "Skock Éva", "Tóth Irén", "Széchenyi Ildikó", "Szijártó Erzsébet",
-            "Szijártó Ferenc", "Szijártó Péter", "Szomorjai Ferenc", "Varga Mária", "", ""
-        ];
+        // IDE ILLESD BE A SAJÁT NPOINT.IO URL CÍMEDET:
+        const API_URL = 'https://www.npoint.io/docs/42ecce76285021549cf5';
 
-        let students = JSON.parse(localStorage.getItem('ulesrend_names_img_42')) || [...defaultNames];
+        let students = [];
         let draggedIndex = null;
         let selectedIndex = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch(API_URL);
+                if (response.ok) {
+                    students = await response.json();
+                    renderGrid();
+                }
+            } catch (error) {
+                console.error("Hiba az adatok betöltésekor:", error);
+            }
+        }
+
+        async function saveData() {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(students)
+                });
+            } catch (error) {
+                console.error("Hiba az adatok mentésekor:", error);
+            }
+        }
 
         function renderGrid() {
             const grid = document.getElementById('grid');
@@ -132,8 +149,8 @@
                     seat.style.backgroundColor = '#fadbd8';
                 }
 
-                const imgName = name.trim();
-                const imgPath = `${imgName}.jpg`;
+                const imgName = name ? name.trim() : '';
+                const imgPath = imgName ? `${imgName}.jpg` : '';
 
                 const img = document.createElement('img');
                 img.src = imgPath;
@@ -152,7 +169,6 @@
                 seat.addEventListener('dragleave', handleDragLeave);
                 seat.addEventListener('drop', handleDrop);
                 seat.addEventListener('dragend', handleDragEnd);
-
                 seat.addEventListener('click', () => handleSeatClick(index));
 
                 grid.appendChild(seat);
@@ -174,7 +190,7 @@
             this.classList.remove('drag-over');
         }
 
-        function handleDrop(e) {
+        async function handleDrop(e) {
             e.preventDefault();
             this.classList.remove('drag-over');
             const targetIndex = parseInt(this.dataset.index);
@@ -184,7 +200,7 @@
                 students[draggedIndex] = students[targetIndex];
                 students[targetIndex] = temp;
 
-                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
+                await saveData();
                 renderGrid();
             }
         }
@@ -194,7 +210,7 @@
             document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
         }
 
-        function handleSeatClick(index) {
+        async function handleSeatClick(index) {
             if (selectedIndex === null) {
                 selectedIndex = index;
                 renderGrid();
@@ -203,13 +219,15 @@
                 students[selectedIndex] = students[index];
                 students[index] = temp;
 
-                localStorage.setItem('ulesrend_names_img_42', JSON.stringify(students));
+                await saveData();
                 selectedIndex = null;
                 renderGrid();
             }
         }
 
-        renderGrid();
+        // Adatok betöltése induláskor, majd 5 másodpercenkénti frissítés a szinkronhoz
+        loadData();
+        setInterval(loadData, 5000);
     </script>
 </body>
 </html>
