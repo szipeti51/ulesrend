@@ -217,3 +217,234 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osztály Üléssorrend Képekkel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 3px;
+            font-size: 18px;
+            text-align: center;
+        }
+        p {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 11px;
+            text-align: center;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            max-width: 1200px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .seat {
+            background: #ffffff;
+            border: 2px dashed #3498db;
+            border-radius: 6px;
+            padding: 4px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 65px;
+        }
+        /* Kettesével lévő padok külső vastagabb keretezése */
+        .seat:nth-child(6n + 1), .seat:nth-child(6n + 2) {
+            border: 3px solid #1b4f72;
+            background-color: #f8f9f9;
+        }
+        .seat:nth-child(6n + 3), .seat:nth-child(6n + 4) {
+            border: 3px solid #117864;
+            background-color: #f8f9f9;
+        }
+        .seat:nth-child(6n + 5), .seat:nth-child(6n + 6) {
+            border: 3px solid #7d6608;
+            background-color: #f8f9f9;
+        }
+        .seat img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 2px;
+            border: 1px solid #ccc;
+        }
+        .seat span {
+            font-size: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        .seat.drag-over {
+            background: #ebf5fb !important;
+            border-color: #2980b9 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Iskolai Üléssorrend Képekkel</h1>
+    <p>Húzd át egerrel vagy kattints két személyre a helycseréhez (kétirányú online szinkronnal)!</p>
+
+    <div id="grid"></div>
+
+    <script>
+        // A te saját JSONBin adataid:
+        const BIN_ID = '42ecce76285021549cf5';
+        const API_KEY = 'IDE_JÖN_A_MASTER_KEY'; // Ha szükséges, itt add meg a kulcsot
+
+        let students = [];
+        let draggedIndex = null;
+        let selectedIndex = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: {
+                        'X-Master-Key': API_KEY
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    students = data.record;
+                    renderGrid();
+                }
+            } catch (error) {
+                console.error("Hiba az adatok betöltésekor:", error);
+            }
+        }
+
+        async function saveData() {
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(students)
+                });
+            } catch (error) {
+                console.error("Hiba az adatok mentésekor:", error);
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            students.forEach((name, index) => {
+                const seat = document.createElement('div');
+                seat.className = 'seat';
+                seat.draggable = true;
+                seat.dataset.index = index;
+
+                if (selectedIndex === index) {
+                    seat.style.border = '3px solid red';
+                    seat.style.backgroundColor = '#fadbd8';
+                }
+
+                const imgName = name ? name.trim() : '';
+                const imgPath = imgName ? `${imgName}.jpg` : '';
+
+                const img = document.createElement('img');
+                img.src = imgPath;
+                img.onerror = function () {
+                    this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="%232390caf9"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                };
+
+                const span = document.createElement('span');
+                span.innerText = name || `Üres ${index + 1}`;
+
+                seat.appendChild(img);
+                seat.appendChild(span);
+
+                seat.addEventListener('dragstart', handleDragStart);
+                seat.addEventListener('dragover', handleDragOver);
+                seat.addEventListener('dragleave', handleDragLeave);
+                seat.addEventListener('drop', handleDrop);
+                seat.addEventListener('dragend', handleDragEnd);
+                seat.addEventListener('click', () => handleSeatClick(index));
+
+                grid.appendChild(seat);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedIndex = parseInt(this.dataset.index);
+            e.dataTransfer.setData('text/plain', draggedIndex);
+            setTimeout(() => this.style.opacity = '0.4', 0);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            const targetIndex = parseInt(this.dataset.index);
+
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                const temp = students[draggedIndex];
+                students[draggedIndex] = students[targetIndex];
+                students[targetIndex] = temp;
+
+                await saveData();
+                renderGrid();
+            }
+        }
+
+        function handleDragEnd() {
+            this.style.opacity = '1';
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
+        }
+
+        async function handleSeatClick(index) {
+            if (selectedIndex === null) {
+                selectedIndex = index;
+                renderGrid();
+            } else {
+                const temp = students[selectedIndex];
+                students[selectedIndex] = students[index];
+                students[index] = temp;
+
+                await saveData();
+                selectedIndex = null;
+                renderGrid();
+            }
+        }
+
+        loadData();
+        setInterval(loadData, 4000);
+    </script>
+</body>
+</html>
